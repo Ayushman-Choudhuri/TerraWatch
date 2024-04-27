@@ -13,12 +13,14 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+import base64
+import requests
+
 ### Loading the keys
 
 # my keys are in ~/Documents/TUMai-hackathon/openai-key
 
 load_dotenv()
-client = Groq(api_key=os.getenv('GROQ_API_KEY'))
 
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -31,11 +33,12 @@ print(f'Groq key length: {len(GROQ_API_KEY)}')
 
 ### API request
 
-client = Groq(api_key=GROQ_API_KEY)
+groq_client = Groq(api_key=GROQ_API_KEY)
+openai_client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 def response(text, temperature=0.0,max_tokens=1024,json=False):
     text = text + "\nReturn a JSON object." if json else text
-    res = client.chat.completions.create(
+    res = groq_client.chat.completions.create(
         messages=[
             {
                 "role": "user",
@@ -95,12 +98,19 @@ def llm_request(lat, long):
     response = lat_long(lat, long)
     return json.loads(response)
 
-# work in progress
+### OPENAI (GPT-4)
+
+# Function to encode the image
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
 @app.get("/image")
 def image_request():
-    res = client.chat.completions.create(
-      model="llama3-70b-8192",
-      messages=[
+    res = openai_client.chat.completions.create(
+
+    model="gpt-4-turbo",
+    messages=[
         {
           "role": "user",
           "content": [
@@ -113,9 +123,8 @@ def image_request():
             },
           ],
         }
-      ],
-      max_tokens=300,
+    ],
+    max_tokens=300,
     )
-    print(type(res))
 
     return res.choices[0].message.content
