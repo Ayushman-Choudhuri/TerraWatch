@@ -30,3 +30,6 @@ yarn-error.log*
 data/
 models/
 sat_seg_venv/
+__pycache__/
+deforestation-segmentation-weights.h5
+*.png
