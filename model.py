@@ -1,47 +1,26 @@
 import tensorflow as tf
-from tensorflow.keras.utils import plot_model
 
-config = tf.compat.v1.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.compat.v1.Session(config=config)
-
-from tensorflow.keras import backend as K
-import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, BatchNormalization, Activation,\
                                     MaxPool2D, UpSampling2D, concatenate,\
                                     Input, Conv2DTranspose, MaxPooling2D,\
                                     Dropout, BatchNormalization
 from tensorflow.keras.models import Model
-from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-# import tensorflow.keras as K
-
-# config = tf.compat.v1.ConfigProto()
-# config.gpu_options.allow_growth = True
-# sess = tf.compat.v1.Session(config=config)
-
-from IPython.display import clear_output
-import matplotlib.pyplot as plt
-import numpy as np
-# from numba import cuda
-import datetime
-import copy
-import PIL
-import sys
-import random
-import os
-from matplotlib import colors
-
-from tensorflow.keras import backend as K
-
-# random.seed(42)
-# tf.random.set_seed(42)
-# np.random.seed(42)
 
 import matplotlib.pyplot as plt
 import numpy as np
 from numba import cuda
-import datetime
+from PIL import Image
+
+config = tf.compat.v1.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.compat.v1.Session(config=config)
+
+from utils import center_crop
+
+pretrained_model_path = "/mnt/c/Users/endez/Documents/TUMAIMakeathon/U6_E_1201-F1_0.7134-IOU_0.6555.h5"
+# test_4 = Image.open("C:/Users/endez/Documents/TUMAIMakeathon/map-screenshot-3.png")
+image = "/mnt/c/Users/endez/Documents/TUMAIMakeathon/map-screenshot-3.png"
+# pretrained_model_path = "C:/Users/endez/Downloads/U6_E_1201-F1_0.7134-IOU_0.6555.h5"
 
 def conv2d_block(input_tensor, n_filters, kernel_size=3, batchnorm=True, sublayers=2):
     '''In case batchnorm=False "if" statement will be skipped and in amount of "sublayers" convolutional layers will be created.'''
@@ -108,30 +87,36 @@ def build_unet(input_shape=(512, 512, 3), filters=[16, 32, 64, 128, 256], batchn
     model = Model(inputs=inputs, outputs=outputs)
     return model
 
-final_filters = 2048
-model10 = build_unet(input_shape=(1024, 1024, 3),
-                     filters=[2 ** i for i in range(5, int(np.log2(final_filters) + 1))], # Amount of filters in U-Net arch.
-                     batchnorm=False, transpose=False, dropout_flag=False)
+def get_prediction(image):
 
-# path_to_load = "C:/Users/endez/Downloads/U6_E_1201-F1_0.7134-IOU_0.6555.h5"
-path_to_load = "/mnt/c/Users/endez/Documents/TUMAIMakeathon/U6_E_1201-F1_0.7134-IOU_0.6555.h5"
-model10.load_weights(path_to_load)
+    final_filters = 2048
+    model10 = build_unet(input_shape=(1024, 1024, 3),
+                         filters=[2 ** i for i in range(5, int(np.log2(final_filters) + 1))], # Amount of filters in U-Net arch.
+                         batchnorm=False, transpose=False, dropout_flag=False)
 
-from PIL import Image
-# test_4 = Image.open("C:/Users/endez/Documents/TUMAIMakeathon/map-screenshot-3.png")
-test_4 = Image.open("/mnt/c/Users/endez/Documents/TUMAIMakeathon/map-screenshot-3.png")
+    model10.load_weights(pretrained_model_path)
 
-image = np.asarray(test_4)
-image = image[:1024,:1024,:3]
-image = image[np.newaxis, ...]
-# plt.imshow(image[0])
-# plt.show()
+    image = Image.open(image)
 
-prediction = model10.predict(image)
+    image = np.asarray(image)
+    image = center_crop(image, (1024, 1024))
+    image = image[:,:,:3]
+    image = image[np.newaxis, ...]
+    # plt.imshow(image[0])
+    # plt.show()
 
-prediction_class1 = np.copy(prediction[..., 0]) # Forest
-prediction_class2 = np.copy(prediction[..., 1]) # Deforest
-prediction[..., 0] = prediction_class2 # RED - Deforest
-prediction[..., 1] = prediction_class1 # GREEN - Forest
-plt.imshow(prediction[0])
+    prediction = model10.predict(image)
+
+    prediction_class1 = np.copy(prediction[..., 0]) # Forest
+    prediction_class2 = np.copy(prediction[..., 1]) # Deforest
+    prediction[..., 0] = prediction_class2 # RED - Deforest
+    prediction[..., 1] = prediction_class1 # GREEN - Forest
+    # plt.imshow(prediction[0])
+    # plt.show()
+
+    return prediction[0]
+
+output = get_prediction(image)
+plt.imshow(output)
 plt.show()
+
