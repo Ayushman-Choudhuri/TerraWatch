@@ -9,7 +9,7 @@ export const postInsights = async (formBody) => {
 }
 
 export const getInsights = async (longitude, latitude) => {
-    const response = await fetch(`http://${root}/lon_lat/${longitude}/${latitude}`);
+    const response = await fetch(`http://${root}/lat_long/${longitude}/${latitude}`);
     return response.json();
 }
 
