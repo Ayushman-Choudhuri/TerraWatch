@@ -50,6 +50,8 @@ def response(text, temperature=0.0,max_tokens=1024,json=False):
     return res.choices[0].message.content
 
 def lat_long(lat, long):
+    geo_data = get_nominatim(lat, long)
+
     prompt = f"""
         You are a helpful weather assistant.
         You present helpful geospatial data.
@@ -58,8 +60,13 @@ def lat_long(lat, long):
         The location is:
         Latitude: {lat}
         Longitude: {long}
+        City: {geo_data['city']}
+        State: {geo_data['state']}
+        Country: {geo_data['country']}
         
         Generate the following data for this location:
+        * city: string
+        * state: string
         * country: string
         * type of biome: string
         * type of vegetation (if any): string
@@ -83,7 +90,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -213,6 +220,7 @@ def image_mask_request(image_path="./image.png", mask_path="./mask.png"):
 
     Be succinct.
     Be factual. Double-check your claims.
+    No generic comments about deforestation in general. Describe the given images only.
     Adhere to the outlined format.
     If you don't follow this format, you will be penalized.
     """
@@ -283,3 +291,33 @@ def post_test():
     response = requests.post(url=url, files=file)
     result = json.loads(response.json())
     return result
+
+@app.get("/nominatim_test/{lat}/{long}")
+def get_nominatim(lat, long):
+    params = {
+        'lat': lat,
+        'lon': long,
+        'accept-language': 'en',
+        # formats: json, geojson, geocodejson
+        'format': 'json',
+    }
+
+    response = requests.get('https://nominatim.openstreetmap.org/reverse', params=params)
+    parsed_response = json.loads(response.content)
+
+    if parsed_response.get('error') == 'Unable to geocode':
+        return {'city': 'not found',
+                'state': 'not found',
+                'country': 'not found'
+            }
+
+    parsed_address = parsed_response['address']
+
+    city = parsed_address.get('village', parsed_address.get('city'))
+    state = parsed_address.get('state', parsed_address.get('county'))
+    country = parsed_address.get('country')
+    
+    return {'city': city,
+            'state': state,
+            'country': country
+        }
