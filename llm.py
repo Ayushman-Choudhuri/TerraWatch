@@ -89,7 +89,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/llm/{lat}/{long}")
+@app.get("/lat_long/{lat}/{long}")
 def llm_request(lat, long):
     response = lat_long(lat, long)
     return json.loads(response)
@@ -181,7 +181,7 @@ def local_image_request(image_path="./47.png"):
 
     return response
 
-def image_mask_request(image_path="./47.png", mask_path="./47.png"):
+def image_mask_request(image_path="./image.png", mask_path="./mask.png"):
     # Getting the base64 string
     base64_image = encode_image(image_path)
     base64_mask = encode_image(mask_path)
@@ -194,25 +194,28 @@ def image_mask_request(image_path="./47.png", mask_path="./47.png"):
     # set prompt
     prompt = """
     You are a helpful deforestation expert.
-    Describe this image.
-
-    The colors represent the following:
+    The first image is a satellite image of a forest area.
+    The second image is a segmented mask where the colors represent the following:
     * Green - Forest
     * Red - Not forest (deforestation area)
     * Blue - Other (borders)
 
-    What fraction of the image has been deforested?
-    What might be the causes?
-    What biome is this?
+    Produce a JSON object with the following structure:
+        * deforestation: number (fraction of deforested area)
+        * fragmentation: number (0.0 is one chunk of deforested area, 1.0 is broken up into multiple regions)
+        * causes: string (potential causes of deforestation in this area. provide 3 reasons, comma-separated.)
+        * biome: string (type of biome)
+        * patterns: string (deforestation patterns. is it in one chunk? or are there many small regions?)
+        * deforestation_type: string (type of deforestation, e.g. dendritic)
+        * use_of_land: string (what can one do with this land? is it suitable for agriculture?)
+        * effect_on_environment: string (how does this influence the surrounding environment? what is the effect on the living species?)
+        * species_affected: array[string] (what species are affected?)
 
     Be succinct.
     Be factual. Double-check your claims.
-
-    Describe both images.
-    Compare them.
+    Adhere to the outlined format.
+    If you don't follow this format, you will be penalized.
     """
-
-    prompt = "Explain both images."
 
     payload = {
       "model": "gpt-4-turbo",
@@ -239,7 +242,8 @@ def image_mask_request(image_path="./47.png", mask_path="./47.png"):
           ]
         }
       ],
-      "max_tokens": 300
+      "max_tokens": 300,
+      "response_format": {"type": "json_object"}
     }
 
     http_response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
@@ -276,5 +280,6 @@ def post_test():
     file = {'image': open('./example_image.png', 'rb'),
             'mask': open('./example_mask.png', 'rb'),
         }
-    resp = requests.post(url=url, files=file)
-    return resp.json()
+    response = requests.post(url=url, files=file)
+    result = json.loads(response.json())
+    return result
