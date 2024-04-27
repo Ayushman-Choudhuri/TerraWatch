@@ -1,10 +1,6 @@
 import openai
 from groq import Groq
 
-# import matplotlib.pyplot as plt
-# import numpy as np
-# import pandas as pd
-
 import json
 
 from dotenv import load_dotenv
@@ -130,10 +126,7 @@ def image_request():
     return res.choices[0].message.content
 
 @app.get("/local_image")
-def local_image_request():
-    # Path to your image
-    image_path = "./47.png"
-
+def local_image_request(image_path="./47.png"):
     # Getting the base64 string
     base64_image = encode_image(image_path)
 
@@ -188,6 +181,73 @@ def local_image_request():
 
     return response
 
+def image_mask_request(image_path="./47.png", mask_path="./47.png"):
+    # Getting the base64 string
+    base64_image = encode_image(image_path)
+    base64_mask = encode_image(mask_path)
+
+    headers = {
+      "Content-Type": "application/json",
+      "Authorization": f"Bearer {OPENAI_API_KEY}"
+    }
+
+    # set prompt
+    prompt = """
+    You are a helpful deforestation expert.
+    Describe this image.
+
+    The colors represent the following:
+    * Green - Forest
+    * Red - Not forest (deforestation area)
+    * Blue - Other (borders)
+
+    What fraction of the image has been deforested?
+    What might be the causes?
+    What biome is this?
+
+    Be succinct.
+    Be factual. Double-check your claims.
+
+    Describe both images.
+    Compare them.
+    """
+
+    prompt = "Explain both images."
+
+    payload = {
+      "model": "gpt-4-turbo",
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": prompt,
+            },
+            {
+              "type": "image_url",
+              "image_url": {
+                "url": f"data:image/png;base64,{base64_image}"
+              }
+            },
+            {
+              "type": "image_url",
+              "image_url": {
+                "url": f"data:image/png;base64,{base64_mask}"
+              }
+            }
+          ]
+        }
+      ],
+      "max_tokens": 300
+    }
+
+    http_response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+    response = http_response.json()
+    response = response['choices'][0]['message']['content']
+
+    return response
+
 @app.post("/upload")
 def upload(image: UploadFile, mask: UploadFile):
     try:
@@ -207,13 +267,14 @@ def upload(image: UploadFile, mask: UploadFile):
         mask.file.close()
 
     # return {"filename": image.filename}
-    return {"message": "Success"}
+    # return {"message": "Success"}
+    return image_mask_request(image_path='image.png', mask_path='mask.png')
 
 @app.get("/post_test")
 def post_test():
     url = 'http://127.0.0.1:8000/upload'
-    file = {'image': open('./47.png', 'rb'),
-            'mask': open('./47.png', 'rb'),
+    file = {'image': open('./example_image.png', 'rb'),
+            'mask': open('./example_mask.png', 'rb'),
         }
     resp = requests.post(url=url, files=file)
     return resp.json()
