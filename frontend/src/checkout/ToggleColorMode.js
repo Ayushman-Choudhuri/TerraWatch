@@ -12,11 +12,12 @@ function ToggleColorMode({ mode, toggleColorMode }) {
       onClick={toggleColorMode}
       color="primary"
       aria-label="Theme toggle button"
+      style={{ marginLeft: 300 }}
     >
       {mode === 'dark' ? (
-        <WbSunnyRoundedIcon fontSize="small" />
+        <WbSunnyRoundedIcon fontSize="large" />
       ) : (
-        <ModeNightRoundedIcon fontSize="small" />
+        <ModeNightRoundedIcon fontSize="large" />
       )}
     </IconButton>
   );

@@ -18,21 +18,22 @@ import requests
 
 load_dotenv()
 
-GROQ_API_KEY = os.getenv('GROQ_API_KEY')
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 assert GROQ_API_KEY is not None
 assert OPENAI_API_KEY is not None
 
-print(f'OpenAI key length: {len(OPENAI_API_KEY)}')
-print(f'Groq key length: {len(GROQ_API_KEY)}')
+print(f"OpenAI key length: {len(OPENAI_API_KEY)}")
+print(f"Groq key length: {len(GROQ_API_KEY)}")
 
 ### API request
 
 groq_client = Groq(api_key=GROQ_API_KEY)
 openai_client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-def response(text, temperature=0.0,max_tokens=1024,json=False):
+
+def response(text, temperature=0.0, max_tokens=1024, json=False):
     text = text + "\nReturn a JSON object." if json else text
     res = groq_client.chat.completions.create(
         messages=[
@@ -45,9 +46,10 @@ def response(text, temperature=0.0,max_tokens=1024,json=False):
         # model="llama3-8b-8192",
         temperature=temperature,
         max_tokens=max_tokens,
-        response_format= {"type": "json_object"} if json else None
+        response_format={"type": "json_object"} if json else None,
     )
     return res.choices[0].message.content
+
 
 def lat_long(lat, long):
     geo_data = get_nominatim(lat, long)
@@ -79,6 +81,7 @@ def lat_long(lat, long):
     """
     return response(prompt, json=True)
 
+
 # print("This is a regular request to the model:")
 # print(response("Give me a random number between 1 and 42.", temperature=2.0))
 # print("This is a request for a latitude and longitude:")
@@ -96,41 +99,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/lat_long/{lat}/{long}")
 def llm_request(lat, long):
     response = lat_long(lat, long)
     return json.loads(response)
 
+
 ### OPENAI (GPT-4)
+
 
 # Function to encode the image
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode('utf-8')
+        return base64.b64encode(image_file.read()).decode("utf-8")
+
 
 @app.get("/image")
 def image_request():
     res = openai_client.chat.completions.create(
-
-    model="gpt-4-turbo",
-    messages=[
-        {
-          "role": "user",
-          "content": [
-            {"type": "text", "text": "What’s in this image?"},
+        model="gpt-4-turbo",
+        messages=[
             {
-              "type": "image_url",
-              "image_url": {
-                "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-              },
-            },
-          ],
-        }
-    ],
-    max_tokens=300,
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What’s in this image?"},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+                        },
+                    },
+                ],
+            }
+        ],
+        max_tokens=300,
     )
 
     return res.choices[0].message.content
+
 
 @app.get("/local_image")
 def local_image_request(image_path="./47.png"):
@@ -138,8 +145,8 @@ def local_image_request(image_path="./47.png"):
     base64_image = encode_image(image_path)
 
     headers = {
-      "Content-Type": "application/json",
-      "Authorization": f"Bearer {OPENAI_API_KEY}"
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
     }
 
     # set prompt
@@ -161,32 +168,33 @@ def local_image_request(image_path="./47.png"):
     """
 
     payload = {
-      "model": "gpt-4-turbo",
-      "messages": [
-        {
-          "role": "user",
-          "content": [
+        "model": "gpt-4-turbo",
+        "messages": [
             {
-              "type": "text",
-              "text": prompt,
-            },
-            {
-              "type": "image_url",
-              "image_url": {
-                "url": f"data:image/jpeg;base64,{base64_image}"
-              }
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": prompt,
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                    },
+                ],
             }
-          ]
-        }
-      ],
-      "max_tokens": 300
+        ],
+        "max_tokens": 300,
     }
 
-    http_response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+    http_response = requests.post(
+        "https://api.openai.com/v1/chat/completions", headers=headers, json=payload
+    )
     response = http_response.json()
-    response = response['choices'][0]['message']['content']
+    response = response["choices"][0]["message"]["content"]
 
     return response
+
 
 def image_mask_request(image_path="./image.png", mask_path="./mask.png"):
     # Getting the base64 string
@@ -194,8 +202,8 @@ def image_mask_request(image_path="./image.png", mask_path="./mask.png"):
     base64_mask = encode_image(mask_path)
 
     headers = {
-      "Content-Type": "application/json",
-      "Authorization": f"Bearer {OPENAI_API_KEY}"
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
     }
 
     # set prompt
@@ -226,51 +234,50 @@ def image_mask_request(image_path="./image.png", mask_path="./mask.png"):
     """
 
     payload = {
-      "model": "gpt-4-turbo",
-      "messages": [
-        {
-          "role": "user",
-          "content": [
+        "model": "gpt-4-turbo",
+        "messages": [
             {
-              "type": "text",
-              "text": prompt,
-            },
-            {
-              "type": "image_url",
-              "image_url": {
-                "url": f"data:image/png;base64,{base64_image}"
-              }
-            },
-            {
-              "type": "image_url",
-              "image_url": {
-                "url": f"data:image/png;base64,{base64_mask}"
-              }
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": prompt,
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{base64_image}"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{base64_mask}"},
+                    },
+                ],
             }
-          ]
-        }
-      ],
-      "max_tokens": 300,
-      "response_format": {"type": "json_object"}
+        ],
+        "max_tokens": 300,
+        "response_format": {"type": "json_object"},
     }
 
-    http_response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+    http_response = requests.post(
+        "https://api.openai.com/v1/chat/completions", headers=headers, json=payload
+    )
     response = http_response.json()
-    response = response['choices'][0]['message']['content']
+    response = response["choices"][0]["message"]["content"]
 
-    return response
+    return json.loads(response)
+
 
 @app.post("/upload")
 def upload(image: UploadFile, mask: UploadFile):
     try:
         # Reading from image
         contents = image.file.read()
-        with open('image.png', 'wb') as f:
+        with open("image.png", "wb") as f:
             f.write(contents)
 
         # Reading from mask
         contents = mask.file.read()
-        with open('mask.png', 'wb') as f:
+        with open("mask.png", "wb") as f:
             f.write(contents)
     except Exception:
         return {"message": "There was an error uploading the files"}
@@ -280,14 +287,15 @@ def upload(image: UploadFile, mask: UploadFile):
 
     # return {"filename": image.filename}
     # return {"message": "Success"}
-    return image_mask_request(image_path='image.png', mask_path='mask.png')
+    return image_mask_request(image_path="image.png", mask_path="mask.png")
+
 
 @app.post("/upload")
 def upload_img_to_llm(image: UploadFile):
     try:
         # Reading from image
         contents = image.file.read()
-        with open('image.png', 'wb') as f:
+        with open("image.png", "wb") as f:
             f.write(contents)
 
     except Exception:
@@ -297,44 +305,43 @@ def upload_img_to_llm(image: UploadFile):
 
     # return {"filename": image.filename}
     # return {"message": "Success"}
-    return image_mask_request(image_path='image.png')
+    return image_mask_request(image_path="image.png")
+
 
 @app.get("/post_test")
 def post_test():
-    url = 'http://127.0.0.1:8000/upload'
-    file = {'image': open('./example_image.png', 'rb'),
-            'mask': open('./example_mask.png', 'rb'),
-        }
+    url = "http://127.0.0.1:8000/upload"
+    file = {
+        "image": open("./example_image.png", "rb"),
+        "mask": open("./example_mask.png", "rb"),
+    }
     response = requests.post(url=url, files=file)
     result = json.loads(response.json())
     return result
 
+
 @app.get("/nominatim_test/{lat}/{long}")
 def get_nominatim(lat, long):
     params = {
-        'lat': lat,
-        'lon': long,
-        'accept-language': 'en',
+        "lat": lat,
+        "lon": long,
+        "accept-language": "en",
         # formats: json, geojson, geocodejson
-        'format': 'json',
+        "format": "json",
     }
 
-    response = requests.get('https://nominatim.openstreetmap.org/reverse', params=params)
+    response = requests.get(
+        "https://nominatim.openstreetmap.org/reverse", params=params
+    )
     parsed_response = json.loads(response.content)
 
-    if parsed_response.get('error') == 'Unable to geocode':
-        return {'city': 'not found',
-                'state': 'not found',
-                'country': 'not found'
-            }
+    if parsed_response.get("error") == "Unable to geocode":
+        return {"city": "not found", "state": "not found", "country": "not found"}
 
-    parsed_address = parsed_response['address']
+    parsed_address = parsed_response["address"]
 
-    city = parsed_address.get('village', parsed_address.get('city'))
-    state = parsed_address.get('state', parsed_address.get('county'))
-    country = parsed_address.get('country')
-    
-    return {'city': city,
-            'state': state,
-            'country': country
-        }
+    city = parsed_address.get("village", parsed_address.get("city"))
+    state = parsed_address.get("state", parsed_address.get("county"))
+    country = parsed_address.get("country")
+
+    return {"city": city, "state": state, "country": country}
