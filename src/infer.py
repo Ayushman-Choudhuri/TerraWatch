@@ -3,7 +3,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
-from utils.preprocess import center_crop
+from utils.preprocess import center_crop , get_png
 from model.unet import build_unet
 import yaml
 
@@ -40,10 +40,10 @@ def get_prediction(image):
     prediction_class2 = np.copy(prediction[..., 1]) # Deforest
     prediction[..., 0] = prediction_class2 # RED - Deforest
     prediction[..., 1] = prediction_class1 # GREEN - Forest
-    # plt.imshow(prediction[0])
-    # plt.show()
 
-    return prediction[0]
+    return get_png(prediction[0])
+
+get_prediction(image)
 
 output = get_prediction(image)
 plt.imshow(output)
