@@ -8,21 +8,26 @@ import Typography from '@mui/material/Typography';
 import { Button, FormLabel, OutlinedInput, TextField } from '@mui/material';
 import { styled } from '@mui/system';
 import { Box } from '@mui/material';
+import { getInsights } from './api';
 
 const FormGrid = styled('div')(() => ({
   display: 'flex',
   flexDirection: 'column',
 }));
 
-function Insights({ totalPrice }) {
+function Insights() {
+  const [longitude, setLongitude] = React.useState(0);
+  const [latitude, setLatitude] = React.useState(0);
+  const [insights, setInsights] = React.useState(null);
+
   return (
     <React.Fragment>
       <FormGrid sx={{ flexDirection: "column", gap: 2 }}>
         <FormGrid sx={{ display: "flex", flexDirection: "row", gap: 2 }}>
-          <OutlinedInput placeholder="Longitude" />
-          <OutlinedInput placeholder='Latitude' />
+          <OutlinedInput placeholder='Longitude' value={longitude} onChange={(x) => setLongitude(x.target.value)} type='number' />
+          <OutlinedInput placeholder='Latitude' value={latitude} onChange={(x) => setLatitude(x.target.value)} type='number' />
         </FormGrid>
-        <Button variant="outlined" color="primary">
+        <Button variant="outlined" color="primary" onClick={() => { console.log(longitude, latitude); console.log(getInsights(longitude, latitude)) }}>
           Analyze</Button>
       </FormGrid>
       <Box
@@ -57,6 +62,7 @@ function Insights({ totalPrice }) {
           boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.05)',
         }}
       />
+      <Typography></Typography>
     </React.Fragment>
   );
 }

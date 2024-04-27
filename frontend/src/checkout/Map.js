@@ -6,20 +6,36 @@ import Stack from '@mui/material/Stack';
 
 
 import { styled } from '@mui/system';
-import { Slider, Typography } from '@mui/material';
+import { Button, Slider, Typography } from '@mui/material';
 import { Checkbox } from '@mui/material';
 import { MapboxMap } from './Mapbox';
 
 import { useCallback } from 'react';
+import { postInsights } from './api';
 
 const FormGrid = styled('div')(() => ({
   display: 'flex',
   flexDirection: 'column',
 }));
 
+function dataURLToBlob(dataURL) {
+  const byteString = atob(dataURL.split(',')[1]);
+  const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0]
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], { type: mimeString });
+}
+
 export default function Map() {
   const [opacity, setOpacity] = React.useState(30);
   const [map, setMap] = React.useState(null);
+  const [showMap, setShowMap] = React.useState(true);
+  const [satelliteImage, setSatelliteImage] = React.useState(null);
+  const [deforestationImage, setDeforestationImage] = React.useState(null);
+  const urlCreator = window.URL || window.webkitURL;
 
   const handleMapLoad = useCallback((mapInstance) => {
     setMap(mapInstance);
@@ -31,14 +47,24 @@ export default function Map() {
 
   const handleScreenshot = (event) => {
     const dataURL = map.getCanvas().toDataURL("image/png");
-    const link = document.createElement('a');
-    link.download = 'map-screenshot.png';
-    link.href = dataURL;
-    link.click();
+    setSatelliteImage(dataURLToBlob(dataURL));
+    const blob = dataURLToBlob(dataURL);
+    // replace live map with static image
+    setShowMap(false);
+    const formData = new FormData();
+    formData.append('image', blob, 'image');
+    formData.append('mask', blob, 'mask');
+    postInsights(formData).then((response) => {
+      console.log(response);
+    });
   };
 
+  const handleShowMap = (event) => {
+    setShowMap(true);
+  }
+
   return (
-    <Stack spacing={{ xs: 3, sm: 6 }} useFlexGap>
+    <Stack spacing={{ xs: 1, sm: 2 }} useFlexGap>
       <FormControl component="fieldset" fullWidth>
       </FormControl>
       <Box
@@ -73,15 +99,23 @@ export default function Map() {
             </FormGrid>
           </FormGrid>
           <FormGrid>
-            <MapboxMap
-              style="mapbox://styles/mapbox/satellite-v9"
-              containerStyle={{
-                height: '700px',
-                width: '700px'
-              }}
-              onStyleLoad={handleMapLoad}
-            >
-            </MapboxMap>;
+            {showMap ? <>
+              <MapboxMap
+                style="mapbox://styles/mapbox/satellite-v9"
+                containerStyle={{
+                  height: '800px',
+                  width: '800px',
+                  borderRadius: 8,
+                  marginBottom: "16px",
+                }}
+                onStyleLoad={handleMapLoad}
+              />
+              <Button variant="outlined" color="primary" onClick={handleScreenshot}>Analyze Area</Button>
+            </> : <>
+              <img src={urlCreator.createObjectURL(satelliteImage)} style={{ height: "800px", width: "800px", borderRadius: 8, marginBottom: "16px" }} alt="satellite" />
+              <Button variant="outlined" color="primary" onClick={handleShowMap}>Show Map</Button>
+            </>}
+
           </FormGrid>
         </Box>
       </Box>

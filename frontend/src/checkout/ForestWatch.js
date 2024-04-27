@@ -88,9 +88,8 @@ export default function Checkout() {
             width: '100%',
             backgroundColor: { xs: 'transparent', sm: 'background.default' },
             alignItems: 'start',
-            pt: { xs: 2, sm: 4 },
-            px: { xs: 2, sm: 10 },
-            // gap: { xs: 4, md: 8 },
+            pt: { xs: 2, sm: 2 },
+            px: { xs: 2, sm: 4 },
           }}
         >
           <Box
@@ -108,7 +107,6 @@ export default function Checkout() {
               display: 'flex',
               flexDirection: 'column',
               width: '100%',
-              gap: { xs: 5, md: 'none' },
             }}
           >
             <Map />
