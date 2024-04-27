@@ -192,7 +192,7 @@ def local_image_request():
 def upload(file: UploadFile):
     try:
         contents = file.file.read()
-        with open(file.filename, 'wb') as f:
+        with open('output.png', 'wb') as f:
             f.write(contents)
     except Exception:
         return {"message": "There was an error uploading the file"}
@@ -201,10 +201,9 @@ def upload(file: UploadFile):
 
     return {"filename": file.filename}
 
-@app.get("/upload_file")
-def get_upload_file():
+@app.get("/post_test")
+def post_test():
     url = 'http://127.0.0.1:8000/upload'
-    # file = {'file': open('/home/mark/git/satellite_deforestation_image_segmentation/47.png', 'rb')}
     file = {'file': open('./47.png', 'rb')}
-    resp = requests.post(url=url, files=file) 
+    resp = requests.post(url=url, files=file)
     return resp.json()
