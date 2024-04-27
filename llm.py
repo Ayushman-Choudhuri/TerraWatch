@@ -189,21 +189,31 @@ def local_image_request():
     return response
 
 @app.post("/upload")
-def upload(file: UploadFile):
+def upload(image: UploadFile, mask: UploadFile):
     try:
-        contents = file.file.read()
-        with open('output.png', 'wb') as f:
+        # Reading from image
+        contents = image.file.read()
+        with open('image.png', 'wb') as f:
+            f.write(contents)
+
+        # Reading from mask
+        contents = mask.file.read()
+        with open('mask.png', 'wb') as f:
             f.write(contents)
     except Exception:
-        return {"message": "There was an error uploading the file"}
+        return {"message": "There was an error uploading the files"}
     finally:
-        file.file.close()
+        image.file.close()
+        mask.file.close()
 
-    return {"filename": file.filename}
+    # return {"filename": image.filename}
+    return {"message": "Success"}
 
 @app.get("/post_test")
 def post_test():
     url = 'http://127.0.0.1:8000/upload'
-    file = {'file': open('./47.png', 'rb')}
+    file = {'image': open('./47.png', 'rb'),
+            'mask': open('./47.png', 'rb'),
+        }
     resp = requests.post(url=url, files=file)
     return resp.json()
