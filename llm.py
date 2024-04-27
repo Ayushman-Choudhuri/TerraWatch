@@ -83,7 +83,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -213,6 +213,7 @@ def image_mask_request(image_path="./image.png", mask_path="./mask.png"):
 
     Be succinct.
     Be factual. Double-check your claims.
+    No generic comments about deforestation in general. Describe the given images only.
     Adhere to the outlined format.
     If you don't follow this format, you will be penalized.
     """
@@ -283,3 +284,15 @@ def post_test():
     response = requests.post(url=url, files=file)
     result = json.loads(response.json())
     return result
+
+@app.get("/nominatim_test/{lat}/{long}")
+def get_nominatim(lat, long):
+    params = {
+        'lat': lat,
+        'lon': long,
+        # formats: json, geojson, geocodejson
+        'format': 'json'
+    }
+
+    response = requests.get('https://nominatim.openstreetmap.org/reverse', params=params)
+    return json.loads(response.content)
