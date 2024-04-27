@@ -10,7 +10,7 @@ import json
 from dotenv import load_dotenv
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 import base64
@@ -187,3 +187,24 @@ def local_image_request():
     response = response['choices'][0]['message']['content']
 
     return response
+
+@app.post("/upload")
+def upload(file: UploadFile):
+    try:
+        contents = file.file.read()
+        with open(file.filename, 'wb') as f:
+            f.write(contents)
+    except Exception:
+        return {"message": "There was an error uploading the file"}
+    finally:
+        file.file.close()
+
+    return {"filename": file.filename}
+
+@app.get("/upload_file")
+def get_upload_file():
+    url = 'http://127.0.0.1:8000/upload'
+    # file = {'file': open('/home/mark/git/satellite_deforestation_image_segmentation/47.png', 'rb')}
+    file = {'file': open('./47.png', 'rb')}
+    resp = requests.post(url=url, files=file) 
+    return resp.json()
