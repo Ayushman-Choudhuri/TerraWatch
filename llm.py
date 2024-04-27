@@ -128,3 +128,62 @@ def image_request():
     )
 
     return res.choices[0].message.content
+
+@app.get("/local_image")
+def local_image_request():
+    # Path to your image
+    image_path = "./47.png"
+
+    # Getting the base64 string
+    base64_image = encode_image(image_path)
+
+    headers = {
+      "Content-Type": "application/json",
+      "Authorization": f"Bearer {OPENAI_API_KEY}"
+    }
+
+    # set prompt
+    prompt = """
+    You are a helpful deforestation expert.
+    Describe this image.
+
+    The colors represent the following:
+    * Green - Forest
+    * Red - Not forest (deforestation area)
+    * Blue - Other (borders)
+
+    What fraction of the image has been deforested?
+    What might be the causes?
+    What biome is this?
+
+    Be succinct.
+    Be factual. Double-check your claims.
+    """
+
+    payload = {
+      "model": "gpt-4-turbo",
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": prompt,
+            },
+            {
+              "type": "image_url",
+              "image_url": {
+                "url": f"data:image/jpeg;base64,{base64_image}"
+              }
+            }
+          ]
+        }
+      ],
+      "max_tokens": 300
+    }
+
+    http_response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+    response = http_response.json()
+    response = response['choices'][0]['message']['content']
+
+    return response
