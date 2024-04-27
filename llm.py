@@ -282,6 +282,23 @@ def upload(image: UploadFile, mask: UploadFile):
     # return {"message": "Success"}
     return image_mask_request(image_path='image.png', mask_path='mask.png')
 
+@app.post("/upload")
+def upload_img_to_llm(image: UploadFile):
+    try:
+        # Reading from image
+        contents = image.file.read()
+        with open('image.png', 'wb') as f:
+            f.write(contents)
+
+    except Exception:
+        return {"message": "There was an error uploading the files"}
+    finally:
+        image.file.close()
+
+    # return {"filename": image.filename}
+    # return {"message": "Success"}
+    return image_mask_request(image_path='image.png')
+
 @app.get("/post_test")
 def post_test():
     url = 'http://127.0.0.1:8000/upload'

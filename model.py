@@ -15,7 +15,7 @@ config = tf.compat.v1.ConfigProto()
 config.gpu_options.allow_growth = True
 sess = tf.compat.v1.Session(config=config)
 
-from utils import center_crop
+from utils import center_crop, get_png
 import yaml
 config = yaml.safe_load(open("config.yaml"))
 pretrained_model_path = config['pretrained_model']
@@ -109,12 +109,9 @@ def get_prediction(image):
     prediction_class2 = np.copy(prediction[..., 1]) # Deforest
     prediction[..., 0] = prediction_class2 # RED - Deforest
     prediction[..., 1] = prediction_class1 # GREEN - Forest
-    # plt.imshow(prediction[0])
-    # plt.show()
 
-    return prediction[0]
+    return get_png(prediction[0])
 
-output = get_prediction(image)
-plt.imshow(output)
-plt.show()
+get_prediction(image)
+
 
