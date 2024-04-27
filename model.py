@@ -170,11 +170,14 @@ model10 = build_unet(input_shape=(1024, 1024, 3),
                      filters=[2 ** i for i in range(5, int(np.log2(final_filters) + 1))], # Amount of filters in U-Net arch.
                      batchnorm=False, transpose=False, dropout_flag=False)
 
-path_to_load = "C:/Users/endez/Downloads/U6_E_1201-F1_0.7134-IOU_0.6555.h5"
+# path_to_load = "C:/Users/endez/Downloads/U6_E_1201-F1_0.7134-IOU_0.6555.h5"
+path_to_load = "/mnt/c/Users/endez/Documents/TUMAIMakeathon/U6_E_1201-F1_0.7134-IOU_0.6555.h5"
 model10.load_weights(path_to_load)
 
 from PIL import Image
-test_4 = Image.open("C:/Users/endez/Documents/TUMAIMakeathon/map-screenshot-3.png")
+# test_4 = Image.open("C:/Users/endez/Documents/TUMAIMakeathon/map-screenshot-3.png")
+test_4 = Image.open("/mnt/c/Users/endez/Documents/TUMAIMakeathon/map-screenshot-3.png")
+
 image = np.asarray(test_4)
 image = image[:1024,:1024,:3]
 image = image[np.newaxis, ...]
