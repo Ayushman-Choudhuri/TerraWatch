@@ -16,12 +16,10 @@ config.gpu_options.allow_growth = True
 sess = tf.compat.v1.Session(config=config)
 
 from utils import center_crop
-
-pretrained_model_path = "/mnt/c/Users/endez/Documents/TUMAIMakeathon/U6_E_1201-F1_0.7134-IOU_0.6555.h5"
-# test_4 = Image.open("C:/Users/endez/Documents/TUMAIMakeathon/map-screenshot-3.png")
-image = "/mnt/c/Users/endez/Documents/TUMAIMakeathon/map-screenshot-3.png"
-# pretrained_model_path = "C:/Users/endez/Downloads/U6_E_1201-F1_0.7134-IOU_0.6555.h5"
-
+import yaml
+config = yaml.safe_load(open("config.yaml"))
+pretrained_model_path = config['pretrained_model']
+image = config['image']
 def conv2d_block(input_tensor, n_filters, kernel_size=3, batchnorm=True, sublayers=2):
     '''In case batchnorm=False "if" statement will be skipped and in amount of "sublayers" convolutional layers will be created.'''
     for idx in range(sublayers):
