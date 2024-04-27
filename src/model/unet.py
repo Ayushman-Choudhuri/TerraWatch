@@ -1,25 +1,10 @@
 import tensorflow as tf
-
 from tensorflow.keras.layers import Conv2D, BatchNormalization, Activation,\
                                     MaxPool2D, UpSampling2D, concatenate,\
                                     Input, Conv2DTranspose, MaxPooling2D,\
                                     Dropout, BatchNormalization
 from tensorflow.keras.models import Model
 
-import matplotlib.pyplot as plt
-import numpy as np
-from numba import cuda
-from PIL import Image
-
-config = tf.compat.v1.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.compat.v1.Session(config=config)
-
-from utils import center_crop, get_png
-import yaml
-config = yaml.safe_load(open("config.yaml"))
-pretrained_model_path = config['pretrained_model']
-image = config['image']
 def conv2d_block(input_tensor, n_filters, kernel_size=3, batchnorm=True, sublayers=2):
     '''In case batchnorm=False "if" statement will be skipped and in amount of "sublayers" convolutional layers will be created.'''
     for idx in range(sublayers):
@@ -52,15 +37,6 @@ def build_unet(input_shape=(512, 512, 3), filters=[16, 32, 64, 128, 256], batchn
                             n_filters=n_filters, kernel_size=3,
                             batchnorm=batchnorm)
         max_pool = MaxPooling2D((2, 2))(conv)
-        # # Commented dropout
-        # if idx > 1 and dropout_flag:
-        #     print('[INFO] Dropout down')
-        #     dropout = Dropout(dropout_rate)(max_pool)
-        # else:
-        #     print('[INFO] Dropout down skip')
-        #     dropout = max_pool
-        # print(f'[INFO] Conv block {idx} created.')
-        # # Save layer
         conv_dict[f"conv2d_{idx+1}"] = conv
 
     # Change max_pool to dropout
@@ -70,48 +46,10 @@ def build_unet(input_shape=(512, 512, 3), filters=[16, 32, 64, 128, 256], batchn
         concatenation = conv2d_transpose_block(conv_middle if idx==0 else conv,
                                                conv_dict[f"conv2d_{len(conv_dict) - idx}"],
                                                n_filters, kernel_size=2, strides=2, transpose=transpose) # kernel_size=2, like in previous
-        # Commented Dropout
-#         if idx < len(filters) - 3 and dropout_flag:
-#             print('[INFO] Dropout up')
-#             dropout = Dropout(dropout_rate)(concatenation)
-#         else:
-#             print('[INFO] Dropout up skip')
-#             dropout = concatenation
+
         conv = conv2d_block(concatenation, n_filters=n_filters, kernel_size=3, # Change concatenation to Dropout
-#                             batchnorm = batchnorm if idx not in [len(conv_dict), len(conv_dict) - 1] else False)
                               batchnorm = batchnorm)
         print(f'[INFO] UpConv block {idx} created.')
     outputs = Conv2D(3, (1, 1), activation='softmax')(conv)
     model = Model(inputs=inputs, outputs=outputs)
     return model
-
-def get_prediction(image):
-
-    final_filters = 2048
-    model10 = build_unet(input_shape=(1024, 1024, 3),
-                         filters=[2 ** i for i in range(5, int(np.log2(final_filters) + 1))], # Amount of filters in U-Net arch.
-                         batchnorm=False, transpose=False, dropout_flag=False)
-
-    model10.load_weights(pretrained_model_path)
-
-    image = Image.open(image)
-
-    image = np.asarray(image)
-    image = center_crop(image, (1024, 1024))
-    image = image[:,:,:3]
-    image = image[np.newaxis, ...]
-    # plt.imshow(image[0])
-    # plt.show()
-
-    prediction = model10.predict(image)
-
-    prediction_class1 = np.copy(prediction[..., 0]) # Forest
-    prediction_class2 = np.copy(prediction[..., 1]) # Deforest
-    prediction[..., 0] = prediction_class2 # RED - Deforest
-    prediction[..., 1] = prediction_class1 # GREEN - Forest
-
-    return get_png(prediction[0])
-
-get_prediction(image)
-
-
