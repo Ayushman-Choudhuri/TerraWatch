@@ -2,8 +2,8 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
-from utils.preprocess import center_crop, get_png
-from model.unet import build_unet
+from .utils.preprocess import center_crop, get_png, resize
+from .model.unet import build_unet
 import yaml
 
 
@@ -17,7 +17,6 @@ image = config["image"]
 
 
 def get_prediction(image):
-
     final_filters = 2048
     model10 = build_unet(
         input_shape=(1024, 1024, 3),
@@ -30,15 +29,10 @@ def get_prediction(image):
     )
 
     model10.load_weights(pretrained_model_path)
-
-    image = Image.open(image)
-
     image = np.asarray(image)
-    image = center_crop(image, (1024, 1024))
     image = image[:, :, :3]
+    image = center_crop(image, (1024, 1024))
     image = image[np.newaxis, ...]
-    # plt.imshow(image[0])
-    # plt.show()
 
     prediction = model10.predict(image)
 
@@ -47,7 +41,10 @@ def get_prediction(image):
     prediction[..., 0] = prediction_class2  # RED - Deforest
     prediction[..., 1] = prediction_class1  # GREEN - Forest
 
-    return get_png(prediction[0])
+    image = get_png(prediction[0])
 
+    # image.save("mask.png")
 
-get_prediction(image)
+    # image = resize(image, target_size=(900, 900))
+
+    return image

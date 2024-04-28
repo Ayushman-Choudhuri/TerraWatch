@@ -5,5 +5,5 @@ const apiKey = process.env.REACT_APP_MAPBOX_API_TOKEN;
 
 export const MapboxMap = ReactMapboxGl({
     preserveDrawingBuffer: true,
-    accessToken: apiKey
+    accessToken: apiKey,
 });

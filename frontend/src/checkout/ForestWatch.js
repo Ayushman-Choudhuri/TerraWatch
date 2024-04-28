@@ -11,7 +11,7 @@ import { styled } from '@mui/system';
 import { MapboxMap } from './Mapbox';
 
 import { useCallback } from 'react';
-import { getInsights, postInsights } from './api';
+import { getInsights, postInsights, postSegmentation } from './api';
 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
@@ -21,6 +21,8 @@ import Typography from '@mui/material/Typography';
 
 import getTheme from './getTheme';
 import ToggleColorMode from './ToggleColorMode';
+import { Container, Select } from '@mui/material';
+import { MenuItem } from '@mui/material'; // Import the 'MenuItem' component from the '@mui/material' package
 
 const FormGrid = styled('div')(() => ({
   display: 'flex',
@@ -50,8 +52,8 @@ export default function Checkout() {
   const [generalInsights, setGeneralInsights] = React.useState(null);
   const [detailedInsights, setDetailedInsights] = React.useState(null);
 
-  const [generalInsightsLoading, setGeneralInsightsLoading] = React.useState(false);
-  const [detailedInsightsLoading, setDetailedInsightsLoading] = React.useState(false);
+  const [longitude, setLongitude] = React.useState(11.484175312683817);
+  const [latitude, setLatitude] = React.useState(47.72210520962133);
 
   const urlCreator = window.URL || window.webkitURL;
 
@@ -59,38 +61,43 @@ export default function Checkout() {
     setMap(mapInstance);
   }, []);
 
-  const handleOpacityChange = (event, newValue) => {
+  const handleOpacityChange = (_, newValue) => {
     setOpacity(newValue);
   };
 
-  const handleScreenshot = (event) => {
+
+  const handleScreenshot = (_) => {
     const blob = dataURLToBlob(map.getCanvas().toDataURL("image/png"));
     setSatelliteImage(blob);
     const formData = new FormData();
-    console.log(satelliteImage);
     formData.append('image', blob, 'image');
-    formData.append('mask', blob, 'mask');
-    handleInsights(formData);
+    postSegmentation(formData).then((response) => {
+      console.log(response);
+      setDeforestationImage(response);
+      formData.append('mask', response, 'mask');
+      handleInsights(formData);
+    }).catch((error) => {
+      console.log(error);
+    });
 
     // replace live map with static image
     setShowMap(false);
   };
 
   const handleInsights = (formData) => {
-    const center = map.getCenter();
-    const longitude = center.lng;
-    const latitude = center.lat;
-    getInsights(longitude, latitude).then((response) => {
-      console.log("general insights", response);
+    getInsights(map.getCenter().lng, map.getCenter().lat).then((response) => {
       setGeneralInsights(response);
     });
     postInsights(formData).then((response) => {
-      console.log("detailed insights", response);
       setDetailedInsights(response);
     });
   }
 
   const handleShowMap = (_) => {
+    setSatelliteImage(null);
+    setDeforestationImage(null);
+    setGeneralInsights(null);
+    setDetailedInsights(null);
     setShowMap(true);
   }
 
@@ -104,7 +111,7 @@ export default function Checkout() {
       <Grid container >
         <Grid
           item
-          md={5}
+          md={6}
           sx={{
             display: { xs: 'none', md: 'flex' },
             flexDirection: 'column',
@@ -126,7 +133,7 @@ export default function Checkout() {
             }}
             xs={5}
           >
-            <Typography variant='h2'>ForestWatch</Typography>
+            <Typography variant='h2'>TerraWatch</Typography>
             <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
           </Box>
           <Box
@@ -148,14 +155,17 @@ export default function Checkout() {
               <FormGrid sx={{ display: 'flex', flexDirection: 'column', width: "100%" }}>
                 <Typography>Mask Opacity</Typography>
                 <Slider min={0} max={100} defaultValue={30} value={opacity} onChange={handleOpacityChange} marks={[{ value: 0, label: "0%" }, { value: 100, label: "100%" }]} />
+                <Select value="test value" placeholder='test placeholder' label="test label">
+                  <MenuItem default value={10}>Ten</MenuItem>
+                </Select>
               </FormGrid>
               <Box
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
-                  p: 1,
+                  p: 3,
                   mt: 4,
-                  height: 250,
+                  height: 290,
                   width: '100%',
                   borderRadius: '20px',
                   border: '1px solid ',
@@ -165,32 +175,33 @@ export default function Checkout() {
                   textAlign: 'left',
                 }}
               >
-                <Typography variant="h4" gutterBottom component="div" style={{ textAlign: "center" }}>
+                <Typography variant="h4" gutterBottom component="div" style={{ textAlign: "center", marginBottom: "16px" }}>
                   Environmental Details
                 </Typography>
-                {generalInsights ? <>
-                  <Typography variant="body1">
-                    <strong>Country:</strong> {generalInsights.country}
-                  </Typography>
-                  <Typography variant="body1">
-                    <strong>Type of Biome:</strong> {generalInsights.type_of_biome}
-                  </Typography>
-                  <Typography variant="body1">
-                    <strong>Type of Vegetation:</strong> {generalInsights.type_of_vegetation}
-                  </Typography>
-                  <Typography variant="body1">
-                    <strong>Type of Forest:</strong> {generalInsights.type_of_forest}
-                  </Typography>
-                  <Typography variant="body1">
-                    <strong>Summer Average Temperature:</strong> {generalInsights.summer_avg_temp}°C
-                  </Typography>
-                  <Typography variant="body1">
-                    <strong>Winter Average Temperature:</strong> {generalInsights.winter_avg_temp}°C
-                  </Typography>
-                  <Typography variant="body1">
-                    <strong>Precipitation:</strong> {generalInsights.precipitation} mm
-                  </Typography>
-                </> : <Typography variant='h6' style={{ textAlign: 'center', flex: 1, alignContent: 'center' }}>
+                {generalInsights ? <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1">
+                      <strong>Country:</strong> {generalInsights.country}
+                    </Typography>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1">
+                      <strong>Type of Biome:</strong> {generalInsights.type_of_biome}
+                    </Typography>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1">
+                      <strong>Type of Vegetation:</strong> {generalInsights.type_of_vegetation}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1">
+                      <strong>Summer Average Temperature:</strong> {generalInsights.summer_temperature}°C
+                    </Typography>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1">
+                      <strong>Winter Average Temperature:</strong> {generalInsights.winter_temperature}°C
+                    </Typography>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1">
+                      <strong>Precipitation:</strong> {generalInsights.precipitation} mm
+                    </Typography>
+                  </Grid>
+                </Grid> : <Typography variant='h6' style={{ textAlign: 'center', flex: 1, alignContent: 'center' }}>
                   No environmental details available. To get details, click on Analyze Area.
                 </Typography>}
               </Box>
@@ -198,9 +209,9 @@ export default function Checkout() {
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
-                  p: 1,
+                  p: 3,
                   mt: 4,
-                  height: 375,
+                  height: 340,
                   width: '100%',
                   borderRadius: '20px',
                   border: '1px solid ',
@@ -210,20 +221,20 @@ export default function Checkout() {
                   textAlign: 'left',
                 }}
               >
-                <Typography variant='h4' style={{ textAlign: "center" }}>Deforestation Insights</Typography>
+                <Typography variant='h4' style={{ textAlign: "center", marginBottom: "16px" }}>Insights</Typography>
                 {detailedInsights ? <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="body1"><strong>Deforestation:</strong> {detailedInsights.deforestation}</Typography>
-                    <Typography variant="body1"><strong>Fragmentation:</strong> {detailedInsights.fragmentation}</Typography>
-                    <Typography variant="body1"><strong>Causes:</strong> {detailedInsights.causes}</Typography>
-                    <Typography variant="body1"><strong>Biome:</strong> {detailedInsights.biome}</Typography>
-                    <Typography variant="body1"><strong>Patterns:</strong> {detailedInsights.patterns}</Typography>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1"><strong>Deforestation:</strong> {detailedInsights.deforestation}</Typography>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1"><strong>Fragmentation:</strong> {detailedInsights.fragmentation}</Typography>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1"><strong>Causes:</strong> {detailedInsights.causes}</Typography>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1"><strong>Biome:</strong> {detailedInsights.biome}</Typography>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1"><strong>Patterns:</strong> {detailedInsights.patterns}</Typography>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="body1"><strong>Deforestation Type:</strong> {detailedInsights.deforestation_type}</Typography>
-                    <Typography variant="body1"><strong>Use of Land:</strong> {detailedInsights.use_of_land}</Typography>
-                    <Typography variant="body1"><strong>Effect on Environment:</strong> {detailedInsights.effect_on_environment}</Typography>
-                    <Typography variant="body1"><strong>Species Affected:</strong> {detailedInsights.species_affected.map((species) => (
+                    <Typography style={{ marginBottom: "8px" }} variant="body1"><strong>Deforestation Type:</strong> {detailedInsights.deforestation_type}</Typography>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1"><strong>Use of Land:</strong> {detailedInsights.use_of_land}</Typography>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1"><strong>Effect on Environment:</strong> {detailedInsights.effect_on_environment}</Typography>
+                    <Typography style={{ marginBottom: "8px" }} variant="body1"><strong>Species Affected:</strong> {detailedInsights.species_affected.map((species) => (
                       `${species},`
                     ))}</Typography>
                   </Grid>
@@ -236,7 +247,7 @@ export default function Checkout() {
         </Grid>
         <Grid
           item
-          md={7}
+          md={6}
           sx={{
             display: 'flex',
             height: '100vh',
@@ -270,6 +281,7 @@ export default function Checkout() {
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     gap: 3,
+                    marginTop: "80px",
                     p: 3,
                     borderRadius: '20px',
                     border: '1px solid ',
@@ -283,19 +295,24 @@ export default function Checkout() {
                       <MapboxMap
                         style="mapbox://styles/mapbox/satellite-v9"
                         containerStyle={{
-                          height: '850px',
-                          width: '850px',
+                          height: '700px',
+                          width: '700px',
                           borderRadius: 8,
                           marginBottom: "16px",
                         }}
                         onStyleLoad={handleMapLoad}
+                        center={[longitude, latitude]}
                       />
                       <Button variant="outlined" color="primary" onClick={handleScreenshot}>Analyze Area</Button>
                     </> : <>
-                      <img src={urlCreator.createObjectURL(satelliteImage)} style={{ height: "850px", width: "850px", borderRadius: 8, marginBottom: "16px" }} alt="satellite" />
+                      <img src={urlCreator.createObjectURL(satelliteImage)} style={{ height: "700px", width: "700px", borderRadius: 8, marginBottom: "16px", zIndex: 0 }} alt="satellite" />
+                      <>
+                        <img src={deforestationImage ? urlCreator.createObjectURL(deforestationImage) : null} style={{ height: "700px", width: "700px", borderRadius: 8, marginBottom: "16px", position: "absolute", zIndex: 1, opacity: opacity / 100 }} alt="satellite" />
+                        {/* <img src={deforestationImage ? urlCreator.createObjectURL(deforestationImage) : null} style={{ top: "110px", left: "965px", height: "750px", width: "750px", borderRadius: 8, marginBottom: "16px", position: "absolute", zIndex: 1, opacity: opacity / 100 }} alt="satellite" /> */}
+                      </>
                       <Button variant="outlined" color="primary" onClick={handleShowMap}>Show Map</Button>
                     </>}
-
+                    <img src="./legend.png" style={{ height: "100px", width: "140px", borderRadius: 8, position: "absolute", top: 145, right: 130, zIndex: 2 }} alt="legend" />
                   </FormGrid>
                 </Box>
               </Box>

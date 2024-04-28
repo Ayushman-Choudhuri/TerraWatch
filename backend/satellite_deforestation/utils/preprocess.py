@@ -1,5 +1,6 @@
 import numpy as np
 from PIL import Image
+import tensorflow as tf
 
 
 def center_crop(img, dim):
@@ -17,6 +18,27 @@ def center_crop(img, dim):
     cw2, ch2 = int(crop_width / 2), int(crop_height / 2)
     crop_img = img[mid_y - ch2 : mid_y + ch2, mid_x - cw2 : mid_x + cw2]
     return crop_img
+
+
+def resize(img, target_size=(1024, 1024)):
+    """Resizes an image to the given size, padding it to maintain aspect ratio using TensorFlow.
+
+    Args:
+    img: PIL image to be resized and padded
+    target_size: tuple (new_width, new_height)
+    """
+    # Convert PIL Image to TensorFlow tensor
+    image = tf.convert_to_tensor(np.array(img))
+
+    # Resize the image preserving the aspect ratio
+    image = tf.image.resize_with_pad(
+        image, target_size[0], target_size[1], antialias=False
+    )
+
+    # Convert back to uint8
+    image = tf.image.convert_image_dtype(image, tf.uint8)
+
+    return Image.fromarray(image.numpy())
 
 
 def get_png(arr):

@@ -1,3 +1,4 @@
+import io
 import openai
 from groq import Groq
 
@@ -6,28 +7,20 @@ import json
 from dotenv import load_dotenv
 import os
 
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+
+from PIL import Image
 
 import base64
 import requests
 
-### Loading the keys
-
-# my keys are in ~/Documents/TUMai-hackathon/openai-key
+from satellite_deforestation.infer import get_prediction
 
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-assert GROQ_API_KEY is not None
-assert OPENAI_API_KEY is not None
-
-print(f"OpenAI key length: {len(OPENAI_API_KEY)}")
-print(f"Groq key length: {len(GROQ_API_KEY)}")
-
-### API request
 
 groq_client = Groq(api_key=GROQ_API_KEY)
 openai_client = openai.OpenAI(api_key=OPENAI_API_KEY)
@@ -43,7 +36,6 @@ def response(text, temperature=0.0, max_tokens=1024, json=False):
             }
         ],
         model="llama3-70b-8192",
-        # model="llama3-8b-8192",
         temperature=temperature,
         max_tokens=max_tokens,
         response_format={"type": "json_object"} if json else None,
@@ -51,7 +43,33 @@ def response(text, temperature=0.0, max_tokens=1024, json=False):
     return res.choices[0].message.content
 
 
-def lat_long(lat, long):
+def get_nominatim(lat, long):
+    params = {
+        "lat": lat,
+        "lon": long,
+        "accept-language": "en",
+        # formats: json, geojson, geocodejson
+        "format": "json",
+    }
+
+    response = requests.get(
+        "https://nominatim.openstreetmap.org/reverse", params=params
+    )
+    parsed_response = json.loads(response.content)
+
+    if parsed_response.get("error") == "Unable to geocode":
+        return {"city": "not found", "state": "not found", "country": "not found"}
+
+    parsed_address = parsed_response["address"]
+
+    city = parsed_address.get("village", parsed_address.get("city"))
+    state = parsed_address.get("state", parsed_address.get("county"))
+    country = parsed_address.get("country")
+
+    return {"city": city, "state": state, "country": country}
+
+
+def get_environmental_details(lat, long):
     geo_data = get_nominatim(lat, long)
 
     prompt = f"""
@@ -70,9 +88,9 @@ def lat_long(lat, long):
         * city: string
         * state: string
         * country: string
-        * type of biome: string
-        * type of vegetation (if any): string
-        * type of forest (if any): string
+        * type_of_biome: string
+        * type_of_vegetation (if any): string
+        * type_of_forest (if any): string
         * average weather conditions (temperature): two numbers (summer/winter in Celsius, set variable names accordingly)
         * precipitation: one number (mm on average)
         
@@ -81,11 +99,6 @@ def lat_long(lat, long):
     """
     return response(prompt, json=True)
 
-
-# print("This is a regular request to the model:")
-# print(response("Give me a random number between 1 and 42.", temperature=2.0))
-# print("This is a request for a latitude and longitude:")
-# print(lat_long(45.1, 11.4))
 
 ### FastAPI
 
@@ -100,100 +113,15 @@ app.add_middleware(
 )
 
 
-@app.get("/lat_long/{lat}/{long}")
-def llm_request(lat, long):
-    response = lat_long(lat, long)
+@app.get("/environmental-details/{lat}/{long}")
+def environmental_details(lat, long):
+    response = get_environmental_details(lat, long)
     return json.loads(response)
 
 
-### OPENAI (GPT-4)
-
-
-# Function to encode the image
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
-
-
-@app.get("/image")
-def image_request():
-    res = openai_client.chat.completions.create(
-        model="gpt-4-turbo",
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "What’s in this image?"},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-                        },
-                    },
-                ],
-            }
-        ],
-        max_tokens=300,
-    )
-
-    return res.choices[0].message.content
-
-
-@app.get("/local_image")
-def local_image_request(image_path="./47.png"):
-    # Getting the base64 string
-    base64_image = encode_image(image_path)
-
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
-    }
-
-    # set prompt
-    prompt = """
-    You are a helpful deforestation expert.
-    Describe this image.
-
-    The colors represent the following:
-    * Green - Forest
-    * Red - Not forest (deforestation area)
-    * Blue - Other (borders)
-
-    What fraction of the image has been deforested?
-    What might be the causes?
-    What biome is this?
-
-    Be succinct.
-    Be factual. Double-check your claims.
-    """
-
-    payload = {
-        "model": "gpt-4-turbo",
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": prompt,
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                    },
-                ],
-            }
-        ],
-        "max_tokens": 300,
-    }
-
-    http_response = requests.post(
-        "https://api.openai.com/v1/chat/completions", headers=headers, json=payload
-    )
-    response = http_response.json()
-    response = response["choices"][0]["message"]["content"]
-
-    return response
 
 
 def image_mask_request(image_path="./image.png", mask_path="./mask.png"):
@@ -267,15 +195,13 @@ def image_mask_request(image_path="./image.png", mask_path="./mask.png"):
     return json.loads(response)
 
 
-@app.post("/upload")
+@app.post("/deforestation")
 def upload(image: UploadFile, mask: UploadFile):
     try:
-        # Reading from image
         contents = image.file.read()
         with open("image.png", "wb") as f:
             f.write(contents)
 
-        # Reading from mask
         contents = mask.file.read()
         with open("mask.png", "wb") as f:
             f.write(contents)
@@ -285,63 +211,25 @@ def upload(image: UploadFile, mask: UploadFile):
         image.file.close()
         mask.file.close()
 
-    # return {"filename": image.filename}
-    # return {"message": "Success"}
     return image_mask_request(image_path="image.png", mask_path="mask.png")
 
 
-@app.post("/upload")
-def upload_img_to_llm(image: UploadFile):
+@app.post("/segmentation")
+def segmentation(image: UploadFile):
     try:
-        # Reading from image
         contents = image.file.read()
+
         with open("image.png", "wb") as f:
             f.write(contents)
-
     except Exception:
         return {"message": "There was an error uploading the files"}
     finally:
         image.file.close()
 
-    # return {"filename": image.filename}
-    # return {"message": "Success"}
-    return image_mask_request(image_path="image.png")
+    img_byte_arr = io.BytesIO()
+    get_prediction(
+        Image.open(io.BytesIO(base64.b64decode(encode_image("image.png"))))
+    ).save(img_byte_arr, format="PNG")
+    img_byte_arr = img_byte_arr.getvalue()
 
-
-@app.get("/post_test")
-def post_test():
-    url = "http://127.0.0.1:8000/upload"
-    file = {
-        "image": open("./example_image.png", "rb"),
-        "mask": open("./example_mask.png", "rb"),
-    }
-    response = requests.post(url=url, files=file)
-    result = json.loads(response.json())
-    return result
-
-
-@app.get("/nominatim_test/{lat}/{long}")
-def get_nominatim(lat, long):
-    params = {
-        "lat": lat,
-        "lon": long,
-        "accept-language": "en",
-        # formats: json, geojson, geocodejson
-        "format": "json",
-    }
-
-    response = requests.get(
-        "https://nominatim.openstreetmap.org/reverse", params=params
-    )
-    parsed_response = json.loads(response.content)
-
-    if parsed_response.get("error") == "Unable to geocode":
-        return {"city": "not found", "state": "not found", "country": "not found"}
-
-    parsed_address = parsed_response["address"]
-
-    city = parsed_address.get("village", parsed_address.get("city"))
-    state = parsed_address.get("state", parsed_address.get("county"))
-    country = parsed_address.get("country")
-
-    return {"city": city, "state": state, "country": country}
+    return Response(content=img_byte_arr, media_type="image/png")

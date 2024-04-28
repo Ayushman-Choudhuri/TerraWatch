@@ -179,7 +179,7 @@ const getDesignTokens = (mode) => ({
     },
     body1: {
       fontWeight: 400,
-      fontSize: 15,
+      fontSize: 16,
     },
     body2: {
       fontWeight: 400,
@@ -275,20 +275,20 @@ export default function getCheckoutTheme(mode) {
             }),
             ...(ownerState.variant === 'contained' &&
               ownerState.color === 'primary' && {
-                color: brand[50],
-                backgroundColor: brand[500],
-                backgroundImage: `linear-gradient(to bottom, ${brand[400]}, ${brand[500]})`,
-                boxShadow: `inset 0 1px ${alpha(
-                  brand[300],
-                  0.5,
-                )}, inset 0 -2px ${alpha(brand[700], 0.5)}`,
-                border: `1px solid ${brand[500]}`,
-                '&:hover': {
-                  backgroundColor: brand[400],
-                  backgroundImage: 'none',
-                  boxShadow: `0 0 0 1px  ${alpha(brand[300], 0.5)}`,
-                },
-              }),
+              color: brand[50],
+              backgroundColor: brand[500],
+              backgroundImage: `linear-gradient(to bottom, ${brand[400]}, ${brand[500]})`,
+              boxShadow: `inset 0 1px ${alpha(
+                brand[300],
+                0.5,
+              )}, inset 0 -2px ${alpha(brand[700], 0.5)}`,
+              border: `1px solid ${brand[500]}`,
+              '&:hover': {
+                backgroundColor: brand[400],
+                backgroundImage: 'none',
+                boxShadow: `0 0 0 1px  ${alpha(brand[300], 0.5)}`,
+              },
+            }),
             ...(ownerState.variant === 'outlined' && {
               backgroundColor: alpha(brand[300], 0.1),
               borderColor: brand[300],
@@ -308,15 +308,15 @@ export default function getCheckoutTheme(mode) {
             ...(theme.palette.mode === 'dark' && {
               ...(ownerState.variant === 'contained' &&
                 ownerState.color === 'primary' && {
-                  border: `1px solid ${brand[600]}`,
+                border: `1px solid ${brand[600]}`,
+                backgroundImage: 'none',
+                backgroundColor: brand[500],
+                '&:hover': {
+                  background: brand[600],
                   backgroundImage: 'none',
-                  backgroundColor: brand[500],
-                  '&:hover': {
-                    background: brand[600],
-                    backgroundImage: 'none',
-                    boxShadow: `0 0 0 1px  ${alpha(brand[700], 0.5)}`,
-                  },
-                }),
+                  boxShadow: `0 0 0 1px  ${alpha(brand[700], 0.5)}`,
+                },
+              }),
               ...(ownerState.variant === 'outlined' && {
                 backgroundColor: alpha(brand[600], 0.1),
                 borderColor: brand[700],
