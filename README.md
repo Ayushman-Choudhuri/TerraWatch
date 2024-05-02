@@ -1,6 +1,6 @@
-# satellite_deforestation_image_segmentation
+# TerraWatch: AI for Deforestation Detection
 
-## frontend
+## Frontend
 
 setup dependencies
 
