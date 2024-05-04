@@ -1,14 +1,30 @@
-# satellite_deforestation_image_segmentation
+# TerraWatch: Deforestation Detection and Analysis Using Image Segmentation and Multimodal LLMs
 
-## frontend
+## Concept
+
+TerraWatch is a proof of concept system developed during the TUM AI Hackathon 2024 to detect deforestation from satellite images and reason out the causes and potential environmental effects using computer vision models and multimodal large language models. 
+
+## Architecture
+
+![TerraWatch Architecture](./assets/architecture%20diagram.png)
+
+The video demo can be found here --> 
+[Video Demo Link ](./assets/demo_video.mov)
+
+
+## Frontend
 
 setup dependencies
 
-`npm install`
+```bash 
+npm install
+```
 
 run frontend on localhost
 
-`npm start`
+```bash
+npm start
+```
 
 ## Running the LLM
 
