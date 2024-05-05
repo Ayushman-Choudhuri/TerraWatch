@@ -22,6 +22,11 @@ Below is the youtube demo:
 
 ![TerraWatch Architecture](./assets/architecture%20diagram.png)
 
+
+## Segmentation Model
+
+We used a traditional UNet to train the data on annotated sattelite images from Ukraine. The details of the segmentation model training and results will be uploaded soon. 
+
 ## Frontend
 
 setup dependencies
@@ -75,3 +80,9 @@ def post_test():
     result = json.loads(response.json())
     return result
 ```
+
+## Future Work 
+
+1. Upgrade models: We would like to use ResUnet as it was observed that it achieves a faster training convergence desprite its high computational complexity. The residual connections present in its architecture facilitate information propagation and convergence speed. [reference](https://www.mdpi.com/2072-4292/13/24/5084)
+
+2. Fine tune LLM models: The current LLM models have not been fine tuned and we would like to fine tune them based on available environmental datasets. 
