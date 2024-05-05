@@ -6,8 +6,10 @@ TerraWatch is a proof of concept system developed during the TUM AI Hackathon 20
 
 
 <p align="center">
-  <img src="./assets/demo_video.gif" width="50%" alt="Video Demo">
+  <img src="./assets/App.png" alt="App Screenshot">
 </p>
+
+**Link to Full Video Demo:** [Link](./assets/demo_video.mov)
 
 
 ## Architecture
