@@ -2,15 +2,17 @@
 
 ## Concept
 
-TerraWatch is a proof of concept system developed during the TUM AI Hackathon 2024 to detect deforestation from satellite images and reason out the causes and potential environmental effects using computer vision models and multimodal large language models. 
+TerraWatch is a proof of concept system developed during the TUM AI Hackathon 2024 to detect deforestation from satellite images and reason out the causes and potential environmental effects using computer vision models and multimodal large language models.
+
+
+<p align="center">
+  <img src="./assets/demo_video.gif" width="50%" alt="Video Demo">
+</p>
+
 
 ## Architecture
 
 ![TerraWatch Architecture](./assets/architecture%20diagram.png)
-
-The video demo can be found here --> 
-[Video Demo Link ](./assets/demo_video.mov)
-
 
 ## Frontend
 
