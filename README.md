@@ -4,12 +4,18 @@
 
 TerraWatch is a proof of concept system developed during the TUM AI Hackathon 2024 to detect deforestation from satellite images and reason out the causes and potential environmental effects using computer vision models and multimodal large language models.
 
+Below is the youtube demo: 
 
-<p align="center">
-  <img src="./assets/App.png" alt="App Screenshot">
-</p>
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=3_woHe52Zwk">
+    <img src="https://img.youtube.com/vi/3_woHe52Zwk/0.jpg" alt="IMAGE ALT TEXT HERE">
+  </a>
+</div>
 
-**Link to Full Video Demo:** [Link](https://www.youtube.com/watch?v=3_woHe52Zwk)
+
+
+
+**Link to Full Video Demo on Youtube:** [Link](https://www.youtube.com/watch?v=3_woHe52Zwk)
 
 
 ## Architecture
