@@ -12,9 +12,6 @@ Below is the youtube demo:
   </a>
 </div>
 
-
-
-
 **Link to Full Video Demo on Youtube:** [Link](https://www.youtube.com/watch?v=3_woHe52Zwk)
 
 
@@ -29,13 +26,13 @@ We used a traditional UNet to train the data on annotated sattelite images from 
 
 ## Frontend
 
-setup dependencies
+The frontend is built using React with Elements UI. The necessary dependencies need to be installed using npm.
 
 ```bash 
 npm install
 ```
 
-run frontend on localhost
+To start up the local frontend instance run the following command.
 
 ```bash
 npm start
@@ -43,42 +40,31 @@ npm start
 
 ## Running the LLM
 
-1. Get the API keys! Put them in `.env` (don't worry, it's `gitignore`d).
+1. Get your own API keys! Put them in `.env`
 
-2. Create a virtual environment (I use `virtualenv`).
+2. Create a virtual environment for example using `virtualenv` and activate it
 ```bash
-python -m virtualenv tumai
-source tumai/bin/activate
+python -m virtualenv tum-ai
+source tum-ai/bin/activate
 ```
 
-3. Inside the environment, run:
+3. Install all necessary dependencies into the newly created environment using pip
+   
 ```bash
 pip install -r requirements.txt
 ```
-The dependencies are installed. 
 
-4. To start the server, run
+4. Start the local Flask API server using uvicorn
+   
 ```bash
-python -m uvicorn llm:app --reload
+python -m uvicorn api:app --reload
 ```
 
-5. The API is now accessible through
+The API is now accessible through the following endpoints
 ```url
-http://localhost:8000/lat_long/{latitude}/{longitude}
-http://localhost:8000/post_test
-```
-
-Your `POST` request should look something like this:
-```python
-@app.get("/post_test")
-def post_test():
-    url = 'http://127.0.0.1:8000/upload'
-    file = {'image': open('./example_image.png', 'rb'),
-            'mask': open('./example_mask.png', 'rb'),
-        }
-    response = requests.post(url=url, files=file)
-    result = json.loads(response.json())
-    return result
+GET /environmental-details/{latitude}/{longitude}
+POST /deforestation
+POST /segmentation
 ```
 
 ## Future Work 
